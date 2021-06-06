@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -13,24 +12,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const BaseUrl = "http://10.25.73.1"
-const SetupUrl = BaseUrl + "/wirelesssetup_basic.html"
 const Checked = "checked"
 const Timeout = 30 * time.Second
 
 func main() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
-	ctx, _ := context.WithTimeout(context.Background(), Timeout)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
 
-	ctx, _ = chromedp.NewExecAllocator(ctx)
+	//ctx, cancel = chromedp.NewExecAllocator(ctx)
+	//defer cancel()
 
 	// create chrome instance
 	ctx, _ = chromedp.NewContext(
 		ctx,
-		chromedp.WithDebugf(log.Printf),
+		//chromedp.WithDebugf(log.Printf),
 	)
-	//defer cancel()
+	defer cancel()
 
 	opts, err := usage()
 	if err != nil {
@@ -82,6 +80,9 @@ func selectorById(id, tag string) string {
 }
 
 func login(ctx context.Context, password string) error {
+	BaseUrl := "http://10.25.73.1"
+	SetupUrl := BaseUrl + "/wirelesssetup_basic.html"
+
 	userNameSel := selectorById("admin_user_name", "input")
 	passwordSel := selectorById("admin_password", "input")
 	loginBtnSel := selectorById("btn_login", "a")
@@ -121,26 +122,16 @@ func isWlEnabled(ctx context.Context) (bool, error) {
 	enableWlSel := wlRadioSel(true)
 	disableWlSel := wlRadioSel(false)
 	footerSel := selectorById("footer", "div")
+	var isWlEnabled, isWlDisabled bool
 
 	if err := chromedp.Run(ctx,
 		chromedp.WaitVisible(footerSel),
-		chromedp.WaitVisible(enableWlSel),
-		chromedp.WaitVisible(disableWlSel),
+		chromedp.JavascriptAttribute(enableWlSel, Checked, &isWlEnabled),
+		chromedp.JavascriptAttribute(disableWlSel, Checked, &isWlDisabled),
 	); err != nil {
 		return false, err
 	}
 
-	var ok bool
-	var wlEnabledChecked, wlDisabledChecked string
-	if err := chromedp.Run(ctx,
-		chromedp.AttributeValue(enableWlSel, Checked, &wlEnabledChecked, &ok),
-		chromedp.AttributeValue(disableWlSel, Checked, &wlDisabledChecked, &ok),
-	); err != nil {
-		return false, err
-	}
-
-	isWlEnabled := wlEnabledChecked == Checked
-	isWlDisabled := wlDisabledChecked == Checked
 	if isWlEnabled == isWlDisabled {
 		return false, errors.New("enabled==disabled")
 	}
