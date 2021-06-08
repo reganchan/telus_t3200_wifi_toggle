@@ -1,4 +1,4 @@
-module telus_t8300_wifi_toggle
+module telus_t3200_wifi_toggle
 
 go 1.16
 

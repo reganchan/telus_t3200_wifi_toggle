@@ -83,22 +83,18 @@ func login(ctx context.Context, password string) error {
 	BaseUrl := "http://10.25.73.1"
 	SetupUrl := BaseUrl + "/wirelesssetup_basic.html"
 
-	userNameSel := selectorById("admin_user_name", "input")
-	passwordSel := selectorById("admin_password", "input")
-	loginBtnSel := selectorById("btn_login", "a")
 	footerSel := selectorById("footer_homepage", "div")
-	loginFormSel := selectorById("login_form", "div")
 	var loginFormStyle string
 	var ok bool
 
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(BaseUrl),
-		chromedp.WaitVisible(passwordSel),
-		chromedp.SendKeys(userNameSel, "admin"),
-		chromedp.SendKeys(passwordSel, password),
-		chromedp.Click(loginBtnSel, chromedp.NodeVisible),
+		chromedp.WaitVisible("admin_password", chromedp.ByID),
+		chromedp.SendKeys("admin_user_name", "admin", chromedp.ByID),
+		chromedp.SendKeys("admin_password", password, chromedp.ByID),
+		chromedp.Click("btn_login", chromedp.NodeVisible, chromedp.ByID),
 		chromedp.WaitVisible(footerSel),
-		chromedp.AttributeValue(loginFormSel, "style", &loginFormStyle, &ok),
+		chromedp.AttributeValue("login_form", "style", &loginFormStyle, &ok, chromedp.ByID),
 		chromedp.Navigate(SetupUrl),
 	)
 	if err != nil {
@@ -121,13 +117,12 @@ func wlRadioSel(enable bool) string {
 func isWlEnabled(ctx context.Context) (bool, error) {
 	enableWlSel := wlRadioSel(true)
 	disableWlSel := wlRadioSel(false)
-	footerSel := selectorById("footer", "div")
 	var isWlEnabled, isWlDisabled bool
 
 	if err := chromedp.Run(ctx,
-		chromedp.WaitVisible(footerSel),
-		chromedp.JavascriptAttribute(enableWlSel, Checked, &isWlEnabled),
-		chromedp.JavascriptAttribute(disableWlSel, Checked, &isWlDisabled),
+		chromedp.WaitVisible("footer", chromedp.ByID),
+		chromedp.JavascriptAttribute(enableWlSel, Checked, &isWlEnabled, chromedp.NodeVisible),
+		chromedp.JavascriptAttribute(disableWlSel, Checked, &isWlDisabled, chromedp.NodeVisible),
 	); err != nil {
 		return false, err
 	}
@@ -140,8 +135,6 @@ func isWlEnabled(ctx context.Context) (bool, error) {
 
 func setWlEnabled(ctx context.Context, enable bool) error {
 	sel := wlRadioSel(enable)
-	footerSel := selectorById("footer", "div")
-	applyBtnSel := selectorById("btn_apply", "a")
 
 	wlSettingSel := selectorById("id_wl_settings", "div")
 	getWaiter := func(enable bool) chromedp.Action {
@@ -153,10 +146,11 @@ func setWlEnabled(ctx context.Context, enable bool) error {
 	}
 
 	err := chromedp.Run(ctx,
-		chromedp.WaitVisible(footerSel),
+		chromedp.WaitVisible("footer", chromedp.ByID),
 		chromedp.Click(sel),
 		getWaiter(enable),
-		chromedp.Click(applyBtnSel),
+		chromedp.Click("btn_apply", chromedp.NodeVisible, chromedp.ByID),
+		chromedp.WaitNotPresent("btn_apply", chromedp.ByID),
 	)
 	return err
 }
