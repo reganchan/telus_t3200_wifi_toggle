@@ -1,0 +1,68 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: linux-amd64
+            goos: linux
+            goarch: amd64
+            goarm: ""
+            output: wifi-linux-amd64
+
+          - name: linux-armv7
+            goos: linux
+            goarch: arm
+            goarm: "7"
+            output: wifi-linux-armv7
+
+          - name: linux-arm64
+            goos: linux
+            goarch: arm64
+            goarm: ""
+            output: wifi-linux-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: 0
+        run: |
+          go build \
+            -trimpath \
+            -ldflags="-s -w" \
+            -o "${{ matrix.output }}" \
+            .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.output }}
