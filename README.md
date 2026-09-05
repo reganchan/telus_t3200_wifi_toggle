@@ -4,6 +4,8 @@ A small Go utility that uses [chromedp](https://github.com/chromedp/chromedp) to
 
 The original purpose of this project was to experiment with browser automation using Go and `chromedp`, but it is also useful as a lightweight way to automate router configuration from an embedded Linux device.
 
+<img width="1456" height="720" alt="telus_router_page" src="https://github.com/user-attachments/assets/d71ccb84-68db-4587-aa16-eec37a5c4950" />
+
 ## Why Go + chromedp?
 
 Many small embedded devices have limited CPU and memory resources. Running browser automation through Python, Node.js, or similar scripting environments can require a relatively large runtime and dependency footprint.
